@@ -1,7 +1,8 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const API_BASE_URL = "http://localhost:8018/api/v1";
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:8018/api/v1";
 
 // Cliente Axios con configuración e interceptores (igual a servicesService)
 const apiClient = axios.create({

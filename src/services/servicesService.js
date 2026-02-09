@@ -1,7 +1,8 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const API_BASE_URL = "http://localhost:8016/api/v1";
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:8016/api/v1";
 
 // Configurar axios con interceptor para incluir el token
 const apiClient = axios.create({

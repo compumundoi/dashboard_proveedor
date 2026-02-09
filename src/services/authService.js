@@ -2,7 +2,8 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import jwtDecode from "jwt-decode";
 
-const API_BASE_URL = "http://localhost:8000/api/v1";
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:8000/api/v1";
 
 class AuthService {
   constructor() {
@@ -17,6 +18,7 @@ class AuthService {
         email,
         contraseña,
       });
+      // ... (omitted for brevity in replacement chunk but I will handle the whole block)
 
       const { access_token, token_type } = response.data;
 
@@ -139,13 +141,13 @@ class AuthService {
       let endpoint = "";
       switch (userType) {
         case "hotel":
-          endpoint = `http://localhost:8012/api/v1/hoteles/consultar/${userId}`;
+          endpoint = `${API_BASE_URL}/hoteles/consultar/${userId}`;
           break;
         case "restaurante":
-          endpoint = `http://localhost:8013/api/v1/restaurantes/consultar/${userId}`;
+          endpoint = `${API_BASE_URL}/restaurantes/consultar/${userId}`;
           break;
         case "tour":
-          endpoint = `http://localhost:8014/api/v1/experiencias/consultar/${userId}`;
+          endpoint = `${API_BASE_URL}/experiencias/consultar/${userId}`;
           break;
         default:
           throw new Error("Tipo de usuario no válido");
