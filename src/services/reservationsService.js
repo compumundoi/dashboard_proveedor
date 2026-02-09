@@ -1,36 +1,36 @@
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import axios from "axios";
+import Cookies from "js-cookie";
 
-const API_BASE_URL = 'https://back-services.api-reservat.com/api/v1';
+const API_BASE_URL = "http://localhost:8018/api/v1";
 
 // Cliente Axios con configuración e interceptores (igual a servicesService)
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = Cookies.get('access_token');
+    const token = Cookies.get("access_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      Cookies.remove('access_token');
-      window.location.href = '/login';
+      Cookies.remove("access_token");
+      window.location.href = "/login";
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 const reservationsService = {
@@ -41,8 +41,8 @@ const reservationsService = {
       const response = await apiClient.get(url, { params: { pagina, limite } });
       return response.data;
     } catch (error) {
-      console.error('Error al listar reservas por proveedor:', error);
-      console.error('Respuesta de error:', error.response?.data);
+      console.error("Error al listar reservas por proveedor:", error);
+      console.error("Respuesta de error:", error.response?.data);
       throw error;
     }
   },

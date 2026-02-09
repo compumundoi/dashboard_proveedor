@@ -1,8 +1,8 @@
-import axios from 'axios';
-import Cookies from 'js-cookie';
-import jwtDecode from 'jwt-decode';
+import axios from "axios";
+import Cookies from "js-cookie";
+import jwtDecode from "jwt-decode";
 
-const API_BASE_URL = 'https://back-services.api-reservat.com/api/v1';
+const API_BASE_URL = "http://localhost:8000/api/v1";
 
 class AuthService {
   constructor() {
@@ -15,87 +15,86 @@ class AuthService {
     try {
       const response = await axios.post(`${API_BASE_URL}/usuarios/login`, {
         email,
-        contraseña
+        contraseña,
       });
 
       const { access_token, token_type } = response.data;
-      
+
       // Decodificar el JWT
       const decodedToken = jwtDecode(access_token);
-      
+
       // Calcular la fecha de expiración para la cookie
       const expirationDate = new Date(decodedToken.exp * 1000);
-      
+
       // Guardar el token en cookies con la fecha de expiración
       // En desarrollo (HTTP) no usar secure, en producción (HTTPS) sí
-      const isProduction = window.location.protocol === 'https:';
-      Cookies.set('access_token', access_token, { 
+      const isProduction = window.location.protocol === "https:";
+      Cookies.set("access_token", access_token, {
         expires: expirationDate,
         secure: isProduction,
-        sameSite: isProduction ? 'strict' : 'lax'
+        sameSite: isProduction ? "strict" : "lax",
       });
-      
+
       // Guardar información del usuario
       this.token = access_token;
       this.userInfo = decodedToken;
-      
+
       return {
         success: true,
         user: decodedToken,
-        token: access_token
+        token: access_token,
       };
-      
     } catch (error) {
-      let errorMessage = 'Error interno del servidor';
-      
+      let errorMessage = "Error interno del servidor";
+
       if (error.response) {
         switch (error.response.status) {
           case 404:
-            errorMessage = 'El usuario no existe';
+            errorMessage = "El usuario no existe";
             break;
           case 401:
-            errorMessage = 'Credenciales incorrectas';
+            errorMessage = "Credenciales incorrectas";
             break;
           case 403:
-            errorMessage = 'El usuario no está activo, comunícate con el administrador';
+            errorMessage =
+              "El usuario no está activo, comunícate con el administrador";
             break;
           case 500:
-            errorMessage = 'Error interno del servidor';
+            errorMessage = "Error interno del servidor";
             break;
           default:
-            errorMessage = error.response.data?.detail || 'Error desconocido';
+            errorMessage = error.response.data?.detail || "Error desconocido";
         }
       }
-      
+
       return {
         success: false,
-        error: errorMessage
+        error: errorMessage,
       };
     }
   }
 
   // Verificar si el usuario está autenticado
   isAuthenticated() {
-    const token = Cookies.get('access_token');
-    
+    const token = Cookies.get("access_token");
+
     if (!token) {
       return false;
     }
-    
+
     try {
       const decodedToken = jwtDecode(token);
       const currentTime = Date.now() / 1000;
-      
+
       if (decodedToken.exp < currentTime) {
         // Token expirado, remover cookie
         this.logout();
         return false;
       }
-      
+
       this.token = token;
       this.userInfo = decodedToken;
       return true;
-      
     } catch (error) {
       // Token inválido, remover cookie
       this.logout();
@@ -106,7 +105,7 @@ class AuthService {
   // Obtener información del usuario actual
   getCurrentUser() {
     if (!this.userInfo && this.isAuthenticated()) {
-      const token = Cookies.get('access_token');
+      const token = Cookies.get("access_token");
       this.userInfo = jwtDecode(token);
     }
     return this.userInfo;
@@ -115,14 +114,14 @@ class AuthService {
   // Obtener token actual
   getToken() {
     if (!this.token) {
-      this.token = Cookies.get('access_token');
+      this.token = Cookies.get("access_token");
     }
     return this.token;
   }
 
   // Cerrar sesión
   logout() {
-    Cookies.remove('access_token');
+    Cookies.remove("access_token");
     this.token = null;
     this.userInfo = null;
   }
@@ -133,35 +132,35 @@ class AuthService {
       const token = this.getToken();
       const config = {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       };
 
-      let endpoint = '';
+      let endpoint = "";
       switch (userType) {
-        case 'hotel':
-          endpoint = `${API_BASE_URL}/hoteles/consultar/${userId}`;
+        case "hotel":
+          endpoint = `http://localhost:8012/api/v1/hoteles/consultar/${userId}`;
           break;
-        case 'restaurante':
-          endpoint = `${API_BASE_URL}/restaurantes/consultar/${userId}`;
+        case "restaurante":
+          endpoint = `http://localhost:8013/api/v1/restaurantes/consultar/${userId}`;
           break;
-        case 'tour':
-          endpoint = `${API_BASE_URL}/experiencias/consultar/${userId}`;
+        case "tour":
+          endpoint = `http://localhost:8014/api/v1/experiencias/consultar/${userId}`;
           break;
         default:
-          throw new Error('Tipo de usuario no válido');
+          throw new Error("Tipo de usuario no válido");
       }
 
       const response = await axios.get(endpoint, config);
       return {
         success: true,
-        data: response.data
+        data: response.data,
       };
-
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.detail || 'Error al obtener datos del usuario'
+        error:
+          error.response?.data?.detail || "Error al obtener datos del usuario",
       };
     }
   }
