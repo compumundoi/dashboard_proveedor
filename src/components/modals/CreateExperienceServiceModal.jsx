@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   X, 
   Save, 
-  MapPin, 
   DollarSign, 
   FileText, 
   Star,
@@ -23,9 +22,14 @@ import servicesService from '../../services/servicesService';
 import Cookies from 'js-cookie';
 import jwtDecode from 'jwt-decode';
 import Swal from 'sweetalert2';
+import LocationFields, { UBICACION_VACIA } from '../common/LocationFields';
 
 const CreateExperienceServiceModal = ({ isOpen, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
+  // La ubicacion vive aparte del resto del formulario: son ids del
+  // catalogo, no texto. Al enviar se vuelca sobre el payload.
+  const [ubicacion, setUbicacion] = useState(UBICACION_VACIA);
+
   const [formData, setFormData] = useState({
     // Información básica
     nombre: '',
@@ -142,9 +146,10 @@ const CreateExperienceServiceModal = ({ isOpen, onClose, onSuccess }) => {
         fecha_creacion: new Date().toISOString(),
         fecha_actualizacion: new Date().toISOString(),
         relevancia: formData.relevancia,
-        ciudad: formData.ciudad,
-        departamento: formData.departamento,
-        ubicacion: formData.ubicacion,
+        // ciudad, departamento y pais los resuelve el backend desde
+        // municipio_id: el cliente ya no manda ubicacion en texto.
+        municipio_id: ubicacion.municipioId,
+        ubicacion: ubicacion.direccion,
         detalles_del_servicio: JSON.stringify(detallesDelServicio)
       };
 
@@ -264,37 +269,7 @@ const CreateExperienceServiceModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <MapPin className="h-4 w-4 inline mr-1" />
-                  Ciudad *
-                </label>
-                <input
-                  type="text"
-                  name="ciudad"
-                  value={formData.ciudad}
-                  onChange={handleInputChange}
-                  className="input w-full"
-                  placeholder="Bogotá"
-                  required
-                />
-              </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <MapPin className="h-4 w-4 inline mr-1" />
-                  Departamento *
-                </label>
-                <input
-                  type="text"
-                  name="departamento"
-                  value={formData.departamento}
-                  onChange={handleInputChange}
-                  className="input w-full"
-                  placeholder="Cundinamarca"
-                  required
-                />
-              </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -314,20 +289,13 @@ const CreateExperienceServiceModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                <Navigation className="h-4 w-4 inline mr-1" />
-                Ubicación Específica
-              </label>
-              <input
-                type="text"
-                name="ubicacion"
-                value={formData.ubicacion}
-                onChange={handleInputChange}
-                className="input w-full"
-                placeholder="Calle 100 # 15-20"
-              />
-            </div>
+            <LocationFields
+              value={ubicacion}
+              onChange={setUbicacion}
+              required
+              direccionLabel="Dirección / Punto de Encuentro"
+              direccionPlaceholder="Calle 100 # 15-20"
+            />
           </div>
 
           {/* Detalles de la experiencia */}

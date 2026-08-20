@@ -6,7 +6,6 @@ import {
   Building, 
   DollarSign, 
   FileText, 
-  MapPin, 
   Star, 
   Bed, 
   Users, 
@@ -27,9 +26,14 @@ import {
 } from 'lucide-react';
 import servicesService from '../../services/servicesService';
 import Swal from 'sweetalert2';
+import LocationFields, { UBICACION_VACIA } from '../common/LocationFields';
 
 const EditServiceModal = ({ isOpen, onClose, onServiceUpdated, service }) => {
   const [loading, setLoading] = useState(false);
+  // La ubicacion vive aparte del resto del formulario: son ids del
+  // catalogo, no texto. Al enviar se vuelca sobre el payload.
+  const [ubicacion, setUbicacion] = useState(UBICACION_VACIA);
+
   const [formData, setFormData] = useState({
     // Datos básicos del servicio
     nombre: '',
@@ -83,6 +87,15 @@ const EditServiceModal = ({ isOpen, onClose, onServiceUpdated, service }) => {
       // Parsear detalles del servicio
       const detalles = servicesService.parsearDetallesServicio(service.detalles_del_servicio);
       
+      // Los registros anteriores al catalogo pueden no tener ids
+      // resueltos: ahi los selects abren vacios y hay que reelegir.
+      setUbicacion({
+        paisId: service.pais_id ?? null,
+        departamentoId: service.departamento_id ?? null,
+        municipioId: service.municipio_id ?? null,
+        direccion: service.ubicacion || '',
+      });
+
       setFormData({
         // Datos básicos
         nombre: service.nombre || '',
@@ -169,9 +182,10 @@ const EditServiceModal = ({ isOpen, onClose, onServiceUpdated, service }) => {
         fecha_creacion: service.fecha_creacion,
         fecha_actualizacion: new Date().toISOString(),
         relevancia: formData.relevancia,
-        ciudad: formData.ciudad,
-        departamento: formData.departamento,
-        ubicacion: formData.ubicacion,
+        // ciudad, departamento y pais los resuelve el backend desde
+        // municipio_id: el cliente ya no manda ubicacion en texto.
+        municipio_id: ubicacion.municipioId,
+        ubicacion: ubicacion.direccion,
         detalles_del_servicio: servicesService.construirDetallesServicio(formData)
       };
 
@@ -287,35 +301,7 @@ const EditServiceModal = ({ isOpen, onClose, onServiceUpdated, service }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>Ciudad</span>
-                </label>
-                <input
-                  type="text"
-                  name="ciudad"
-                  value={formData.ciudad}
-                  onChange={handleInputChange}
-                  className="input w-full"
-                  placeholder="Bogotá"
-                />
-              </div>
               
-              <div>
-                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>Departamento</span>
-                </label>
-                <input
-                  type="text"
-                  name="departamento"
-                  value={formData.departamento}
-                  onChange={handleInputChange}
-                  className="input w-full"
-                  placeholder="Cundinamarca"
-                />
-              </div>
               
               <div>
                 <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
@@ -336,20 +322,13 @@ const EditServiceModal = ({ isOpen, onClose, onServiceUpdated, service }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>Ubicación</span>
-                </label>
-                <input
-                  type="text"
-                  name="ubicacion"
-                  value={formData.ubicacion}
-                  onChange={handleInputChange}
-                  className="input w-full"
-                  placeholder="Calle 100 # 15-20"
-                />
-              </div>
+              <LocationFields
+                value={ubicacion}
+                onChange={setUbicacion}
+                required
+                direccionLabel="Dirección"
+                direccionPlaceholder="Calle 100 # 15-20"
+              />
               
               <div>
                 <label className="flex items-center space-x-2">

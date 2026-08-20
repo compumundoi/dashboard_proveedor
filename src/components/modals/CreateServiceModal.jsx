@@ -6,7 +6,6 @@ import {
   Building, 
   DollarSign, 
   FileText, 
-  MapPin, 
   Star, 
   Bed, 
   Users, 
@@ -29,9 +28,14 @@ import servicesService from '../../services/servicesService';
 import jwtDecode from 'jwt-decode';
 import Cookies from 'js-cookie';
 import Swal from 'sweetalert2';
+import LocationFields, { UBICACION_VACIA } from '../common/LocationFields';
 
 const CreateServiceModal = ({ isOpen, onClose, onServiceCreated }) => {
   const [loading, setLoading] = useState(false);
+  // La ubicacion vive aparte del resto del formulario: son ids del
+  // catalogo, no texto. Al enviar se vuelca sobre el payload.
+  const [ubicacion, setUbicacion] = useState(UBICACION_VACIA);
+
   const [formData, setFormData] = useState({
     // Datos básicos del servicio
     nombre: '',
@@ -118,9 +122,10 @@ const CreateServiceModal = ({ isOpen, onClose, onServiceCreated }) => {
         fecha_creacion: new Date().toISOString(),
         fecha_actualizacion: new Date().toISOString(),
         relevancia: formData.relevancia,
-        ciudad: formData.ciudad,
-        departamento: formData.departamento,
-        ubicacion: formData.ubicacion,
+        // ciudad, departamento y pais los resuelve el backend desde
+        // municipio_id: el cliente ya no manda ubicacion en texto.
+        municipio_id: ubicacion.municipioId,
+        ubicacion: ubicacion.direccion,
         detalles_del_servicio: servicesService.construirDetallesServicio(formData)
       };
 
@@ -236,35 +241,7 @@ const CreateServiceModal = ({ isOpen, onClose, onServiceCreated }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>Ciudad</span>
-                </label>
-                <input
-                  type="text"
-                  name="ciudad"
-                  value={formData.ciudad}
-                  onChange={handleInputChange}
-                  className="input w-full"
-                  placeholder="Bogotá"
-                />
-              </div>
               
-              <div>
-                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>Departamento</span>
-                </label>
-                <input
-                  type="text"
-                  name="departamento"
-                  value={formData.departamento}
-                  onChange={handleInputChange}
-                  className="input w-full"
-                  placeholder="Cundinamarca"
-                />
-              </div>
               
               <div>
                 <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
@@ -284,20 +261,13 @@ const CreateServiceModal = ({ isOpen, onClose, onServiceCreated }) => {
               </div>
             </div>
 
-            <div>
-              <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
-                <MapPin className="h-4 w-4" />
-                <span>Ubicación</span>
-              </label>
-              <input
-                type="text"
-                name="ubicacion"
-                value={formData.ubicacion}
-                onChange={handleInputChange}
-                className="input w-full"
-                placeholder="Calle 100 # 15-20"
-              />
-            </div>
+            <LocationFields
+              value={ubicacion}
+              onChange={setUbicacion}
+              required
+              direccionLabel="Dirección"
+              direccionPlaceholder="Calle 100 # 15-20"
+            />
           </div>
 
           {/* Detalles del alojamiento */}

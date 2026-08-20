@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Save, 
-  MapPin, 
   DollarSign, 
   FileText, 
   Star,
@@ -21,9 +20,14 @@ import {
 } from 'lucide-react';
 import servicesService from '../../services/servicesService';
 import Swal from 'sweetalert2';
+import LocationFields, { UBICACION_VACIA } from '../common/LocationFields';
 
 const EditExperienceServiceModal = ({ isOpen, onClose, service, onSuccess }) => {
   const [loading, setLoading] = useState(false);
+  // La ubicacion vive aparte del resto del formulario: son ids del
+  // catalogo, no texto. Al enviar se vuelca sobre el payload.
+  const [ubicacion, setUbicacion] = useState(UBICACION_VACIA);
+
   const [formData, setFormData] = useState({
     // Información básica
     nombre: '',
@@ -74,6 +78,15 @@ const EditExperienceServiceModal = ({ isOpen, onClose, service, onSuccess }) => 
         // Parsear detalles del servicio
         const detalles = service.detalles_del_servicio ? 
           JSON.parse(service.detalles_del_servicio) : {};
+
+        // Los registros anteriores al catalogo pueden no tener ids
+        // resueltos: ahi los selects abren vacios y hay que reelegir.
+        setUbicacion({
+          paisId: service.pais_id ?? null,
+          departamentoId: service.departamento_id ?? null,
+          municipioId: service.municipio_id ?? null,
+          direccion: service.ubicacion || '',
+        });
 
         setFormData({
           // Información básica
@@ -192,9 +205,10 @@ const EditExperienceServiceModal = ({ isOpen, onClose, service, onSuccess }) => 
         fecha_creacion: service.fecha_creacion,
         fecha_actualizacion: new Date().toISOString(),
         relevancia: formData.relevancia,
-        ciudad: formData.ciudad,
-        departamento: formData.departamento,
-        ubicacion: formData.ubicacion,
+        // ciudad, departamento y pais los resuelve el backend desde
+        // municipio_id: el cliente ya no manda ubicacion en texto.
+        municipio_id: ubicacion.municipioId,
+        ubicacion: ubicacion.direccion,
         detalles_del_servicio: JSON.stringify(detallesDelServicio)
       };
 
@@ -314,37 +328,7 @@ const EditExperienceServiceModal = ({ isOpen, onClose, service, onSuccess }) => 
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <MapPin className="h-4 w-4 inline mr-1" />
-                  Ciudad *
-                </label>
-                <input
-                  type="text"
-                  name="ciudad"
-                  value={formData.ciudad}
-                  onChange={handleInputChange}
-                  className="input w-full"
-                  placeholder="Bogotá"
-                  required
-                />
-              </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <MapPin className="h-4 w-4 inline mr-1" />
-                  Departamento *
-                </label>
-                <input
-                  type="text"
-                  name="departamento"
-                  value={formData.departamento}
-                  onChange={handleInputChange}
-                  className="input w-full"
-                  placeholder="Cundinamarca"
-                  required
-                />
-              </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -364,20 +348,13 @@ const EditExperienceServiceModal = ({ isOpen, onClose, service, onSuccess }) => 
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                <Navigation className="h-4 w-4 inline mr-1" />
-                Ubicación Específica
-              </label>
-              <input
-                type="text"
-                name="ubicacion"
-                value={formData.ubicacion}
-                onChange={handleInputChange}
-                className="input w-full"
-                placeholder="Calle 100 # 15-20"
-              />
-            </div>
+            <LocationFields
+              value={ubicacion}
+              onChange={setUbicacion}
+              required
+              direccionLabel="Dirección / Punto de Encuentro"
+              direccionPlaceholder="Calle 100 # 15-20"
+            />
           </div>
 
           {/* Detalles de la experiencia */}
