@@ -75,7 +75,8 @@ const ReservationsSection = ({ userType }) => {
       return {
         id: r.id_reserva ?? r.id ?? idx,
         // Campos del cliente (si existen)
-        guestName: r.cliente_nombre || r.nombre_cliente || 'Cliente',
+        // El backend resuelve el nombre del mayorista que solicitó la reserva.
+        guestName: r.nombre_mayorista || r.cliente_nombre || r.nombre_cliente || 'Mayorista',
         email: r.cliente_email || '',
         phone: r.cliente_telefono || '',
         // Campos del servicio
@@ -360,6 +361,9 @@ const ReservationsSection = ({ userType }) => {
                   {r.description && (
                     <p className="text-sm text-gray-600 line-clamp-2">{r.description}</p>
                   )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    Solicita: {r.guestName}
+                  </p>
                 </div>
                 <div className="shrink-0">{getStatusBadge(r.status)}</div>
               </div>
