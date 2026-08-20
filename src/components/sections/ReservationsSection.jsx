@@ -39,6 +39,20 @@ const ReservationsSection = ({ userType }) => {
     }
   }, []);
 
+  // Noches entre dos fechas "YYYY-MM-DD", comparadas como fechas locales.
+  const contarNoches = (inicio, fin) => {
+    if (!inicio || !fin) return 1;
+    const aFecha = (valor) => {
+      const p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor);
+      return p ? new Date(Number(p[1]), Number(p[2]) - 1, Number(p[3])) : new Date(valor);
+    };
+    const desde = aFecha(inicio);
+    const hasta = aFecha(fin);
+    if (isNaN(desde.getTime()) || isNaN(hasta.getTime())) return 1;
+    const noches = Math.round((hasta - desde) / 86400000);
+    return noches > 0 ? noches : 1;
+  };
+
   // Estados reales de una reserva: nace 'pendiente' y un administrador la
   // mueve a 'aprobada' o 'rechazada'. El proveedor solo los consulta.
   const mapStatus = (estadoRaw) => {
@@ -52,6 +66,12 @@ const ReservationsSection = ({ userType }) => {
     return items.map((r, idx) => {
       const unitPrice = r.precio ? parseFloat(String(r.precio)) : (r.total || r.total_pago ? Number(r.total || r.total_pago) : 0);
       const qty = r.cantidad || r.personas || r.huespedes || 1;
+      // El alojamiento se cobra por noche y el resto por persona: la misma
+      // regla con la que el mayorista vio el precio al reservar.
+      const porRango = ['alojamiento', 'hoteles', 'hotel'].includes(
+        String(r.tipo_servicio || '').toLowerCase()
+      );
+      const multiplicador = porRango ? contarNoches(r.fecha_inicio, r.fecha_fin) : qty;
       return {
         id: r.id_reserva ?? r.id ?? idx,
         // Campos del cliente (si existen)
@@ -73,13 +93,17 @@ const ReservationsSection = ({ userType }) => {
         status: mapStatus(r.estado || r.status),
         // Precios
         unitPrice: isNaN(unitPrice) ? 0 : unitPrice,
-        totalAmount: (isNaN(unitPrice) ? 0 : unitPrice) * qty,
+        totalAmount: (isNaN(unitPrice) ? 0 : unitPrice) * multiplicador,
+        priceDetail: porRango
+          ? `${multiplicador} ${multiplicador === 1 ? 'noche' : 'noches'}`
+          : `${qty} ${qty === 1 ? 'persona' : 'personas'}`,
         // Observaciones
         specialRequests: r.observaciones || '',
         // Motivo con el que el administrador rechazo la reserva
         rejectionReason: r.motivo_rechazo || '',
         // otros
         time: r.hora || null,
+        rawStart: r.fecha_inicio || null,
       };
     });
   };
@@ -347,6 +371,7 @@ const ReservationsSection = ({ userType }) => {
                   <span>
                     {getDateLabel()}: {r.checkIn ? formatDate(r.checkIn) : '—'}
                     {r.checkOut && ` • Fin: ${formatDate(r.checkOut)}`}
+                    {r.time && ` • Hora: ${r.time}`}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -358,7 +383,9 @@ const ReservationsSection = ({ userType }) => {
                     ${r.totalAmount.toLocaleString()}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {r.unitPrice ? `(${r.guests} × $${r.unitPrice.toLocaleString()})` : 'Total'}
+                    {r.unitPrice
+                      ? `($${r.unitPrice.toLocaleString()} × ${r.priceDetail})`
+                      : 'Total'}
                   </p>
                 </div>
               </div>
