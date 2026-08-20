@@ -11,7 +11,6 @@ import {
   AlertCircle,
   Filter,
   Search,
-  Plus,
   Loader
 } from 'lucide-react';
 import reservationsService from '../../services/reservationsService';
@@ -160,7 +159,13 @@ const ReservationsSection = ({ userType }) => {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
+    // Las fechas llegan como "YYYY-MM-DD" sin hora: el navegador las lee como
+    // medianoche UTC y en Colombia (UTC-5) se mostrarian un dia antes. Con los
+    // componentes por separado, Date las toma como hora local.
+    const soloFecha = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString || '');
+    const date = soloFecha
+      ? new Date(Number(soloFecha[1]), Number(soloFecha[2]) - 1, Number(soloFecha[3]))
+      : new Date(dateString);
     return date.toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',
@@ -209,13 +214,10 @@ const ReservationsSection = ({ userType }) => {
         <div>
           <h2 className="text-xl font-bold text-gray-900">Gestión de Reservas</h2>
           <p className="text-sm text-gray-600">
-            Administra todas las reservas y solicitudes
+            Consulta las reservas de tus servicios. Las aprueba o rechaza un
+            administrador.
           </p>
         </div>
-        <button className="btn-primary flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
-          <span>Nueva Reserva</span>
-        </button>
       </div>
 
       {/* Filtros y búsqueda */}
@@ -273,9 +275,9 @@ const ReservationsSection = ({ userType }) => {
         <div className="card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Confirmadas</p>
+              <p className="text-sm font-medium text-gray-600">Aprobadas</p>
               <p className="text-2xl font-bold text-green-600">
-                {filteredReservations.filter(r => r.status === 'confirmed').length}
+                {filteredReservations.filter(r => r.status === 'aprobada').length}
               </p>
             </div>
             <CheckCircle className="h-8 w-8 text-green-600" />
@@ -287,7 +289,7 @@ const ReservationsSection = ({ userType }) => {
             <div>
               <p className="text-sm font-medium text-gray-600">Pendientes</p>
               <p className="text-2xl font-bold text-yellow-600">
-                {filteredReservations.filter(r => r.status === 'pending').length}
+                {filteredReservations.filter(r => r.status === 'pendiente').length}
               </p>
             </div>
             <AlertCircle className="h-8 w-8 text-yellow-600" />
@@ -297,9 +299,12 @@ const ReservationsSection = ({ userType }) => {
         <div className="card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Ingresos</p>
+              <p className="text-sm font-medium text-gray-600">Ingresos aprobados</p>
               <p className="text-2xl font-bold text-primary">
-                ${filteredReservations.reduce((sum, r) => sum + r.totalAmount, 0).toLocaleString()}
+                ${filteredReservations
+                  .filter(r => r.status === 'aprobada')
+                  .reduce((sum, r) => sum + r.totalAmount, 0)
+                  .toLocaleString()}
               </p>
             </div>
             <MapPin className="h-8 w-8 text-primary" />
