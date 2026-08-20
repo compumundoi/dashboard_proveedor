@@ -9,8 +9,6 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Eye,
-  Edit,
   Filter,
   Search,
   Plus,
@@ -42,14 +40,11 @@ const ReservationsSection = ({ userType }) => {
     }
   }, []);
 
-  // Mapear estados del backend a los usados en la UI
+  // Estados reales de una reserva: nace 'pendiente' y un administrador la
+  // mueve a 'aprobada' o 'rechazada'. El proveedor solo los consulta.
   const mapStatus = (estadoRaw) => {
     const e = (estadoRaw || '').toString().toLowerCase();
-    if (e === 'pendiente') return 'pending';
-    if (e === 'confirmada' || e === 'confirmado') return 'confirmed';
-    if (e === 'cancelada' || e === 'cancelado') return 'cancelled';
-    if (e === 'completada' || e === 'completado') return 'completed';
-    return e || 'pending';
+    return ['pendiente', 'aprobada', 'rechazada'].includes(e) ? e : 'pendiente';
   };
 
   // Normalizar respuesta API a estructura de UI
@@ -82,6 +77,8 @@ const ReservationsSection = ({ userType }) => {
         totalAmount: (isNaN(unitPrice) ? 0 : unitPrice) * qty,
         // Observaciones
         specialRequests: r.observaciones || '',
+        // Motivo con el que el administrador rechazo la reserva
+        rejectionReason: r.motivo_rechazo || '',
         // otros
         time: r.hora || null,
       };
@@ -136,32 +133,25 @@ const ReservationsSection = ({ userType }) => {
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'confirmed':
+      case 'aprobada':
         return (
           <span className="flex items-center space-x-1 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
             <CheckCircle className="h-3 w-3" />
-            <span>Confirmada</span>
+            <span>Aprobada</span>
           </span>
         );
-      case 'pending':
+      case 'pendiente':
         return (
           <span className="flex items-center space-x-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
             <AlertCircle className="h-3 w-3" />
             <span>Pendiente</span>
           </span>
         );
-      case 'cancelled':
+      case 'rechazada':
         return (
           <span className="flex items-center space-x-1 px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
             <XCircle className="h-3 w-3" />
-            <span>Cancelada</span>
-          </span>
-        );
-      case 'completed':
-        return (
-          <span className="flex items-center space-x-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-            <CheckCircle className="h-3 w-3" />
-            <span>Completada</span>
+            <span>Rechazada</span>
           </span>
         );
       default:
@@ -250,10 +240,9 @@ const ReservationsSection = ({ userType }) => {
               onChange={(e) => setFilterStatus(e.target.value)}
             >
               <option value="all">Todos los estados</option>
-              <option value="confirmed">Confirmadas</option>
-              <option value="pending">Pendientes</option>
-              <option value="cancelled">Canceladas</option>
-              <option value="completed">Completadas</option>
+              <option value="pendiente">Pendientes</option>
+              <option value="aprobada">Aprobadas</option>
+              <option value="rechazada">Rechazadas</option>
             </select>
           </div>
 
@@ -377,18 +366,13 @@ const ReservationsSection = ({ userType }) => {
                 </div>
               )}
 
-              {/* Acciones opcionales */}
-              <div className="flex items-center justify-end gap-2 pt-1">
-                <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors duration-200">
-                  <Eye className="h-4 w-4" />
-                </button>
-                <button className="p-2 text-gray-400 hover:text-green-600 transition-colors duration-200">
-                  <Edit className="h-4 w-4" />
-                </button>
-                <button className="p-2 text-gray-400 hover:text-primary transition-colors duration-200">
-                  <Mail className="h-4 w-4" />
-                </button>
-              </div>
+              {r.status === 'rechazada' && r.rejectionReason && (
+                <div className="mt-1 p-3 bg-red-50 rounded-lg border border-red-100">
+                  <p className="text-sm text-red-700">
+                    <strong>Motivo del rechazo:</strong> {r.rejectionReason}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         ))}
