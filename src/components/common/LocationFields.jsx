@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 import ubicacionService from "../../services/ubicacionService";
 
@@ -33,6 +33,15 @@ const LocationFields = ({
   const [cargandoMunicipios, setCargandoMunicipios] = useState(false);
   const [errorCatalogo, setErrorCatalogo] = useState(null);
 
+  // El catálogo llega por red, así que la respuesta puede resolverse después
+  // de que el formulario de edición volcó su ubicación guardada. Sin esta
+  // referencia, el efecto de abajo escribiría el `value` que capturó al montar
+  // —vacío— y borraría el departamento y el municipio recién cargados.
+  const valorVigente = useRef(value);
+  useEffect(() => {
+    valorVigente.current = value;
+  }, [value]);
+
   // País por defecto y departamentos: una sola vez, el catálogo es estático.
   useEffect(() => {
     let vigente = true;
@@ -49,8 +58,8 @@ const LocationFields = ({
 
         // El país nunca lo elige el usuario: si el formulario abrió sin él
         // (alta nueva) se completa acá.
-        if (value.paisId !== paisPorDefecto.id) {
-          onChange({ ...value, paisId: paisPorDefecto.id });
+        if (valorVigente.current.paisId !== paisPorDefecto.id) {
+          onChange({ ...valorVigente.current, paisId: paisPorDefecto.id });
         }
       })
       .catch(() => {
