@@ -4,6 +4,7 @@ import Login from './components/Login';
 import HotelDashboard from './components/HotelDashboard';
 import RestaurantDashboard from './components/RestaurantDashboard';
 import ExperienceDashboard from './components/ExperienceDashboard';
+import TransportDashboard from './components/TransportDashboard';
 import authService from './services/authService';
 import './index.css';
 
@@ -68,6 +69,8 @@ function App() {
         return <RestaurantDashboard user={user} onLogout={handleLogout} />;
       case 'tour':
         return <ExperienceDashboard user={user} onLogout={handleLogout} />;
+      case 'transporte':
+        return <TransportDashboard user={user} onLogout={handleLogout} />;
       default:
         return (
           <div className="min-h-screen bg-gray-50 flex items-center justify-center">

@@ -149,6 +149,9 @@ class AuthService {
         case "tour":
           endpoint = `${API_BASE_URL}/experiencias/consultar/${userId}`;
           break;
+        case "transporte":
+          endpoint = `${API_BASE_URL}/transportes/consultar/${userId}`;
+          break;
         default:
           throw new Error("Tipo de usuario no válido");
       }
