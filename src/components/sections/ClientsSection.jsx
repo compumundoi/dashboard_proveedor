@@ -1,388 +1,338 @@
-import React, { useState } from 'react';
-import { 
-  Users, 
-  Search, 
-  Filter, 
-  Plus, 
-  Eye, 
-  Edit, 
-  Mail, 
-  Phone, 
-  MapPin, 
+import React, { useState, useEffect } from 'react';
+import {
+  Users,
+  Search,
+  Phone,
+  MapPin,
   Calendar,
-  Star,
-  TrendingUp,
-  Heart,
-  Award
+  CheckCircle,
+  DollarSign,
+  Loader,
+  AlertCircle
 } from 'lucide-react';
+import reservationsService from '../../services/reservationsService';
+import mayoristasService from '../../services/mayoristasService';
+import jwtDecode from 'jwt-decode';
+import Cookies from 'js-cookie';
 
-const ClientsSection = ({ userType }) => {
+/**
+ * Mayoristas que han reservado los servicios de este proveedor.
+ *
+ * No hay un endpoint de "clientes del proveedor": la lista se deriva de sus
+ * propias reservas agrupadas por mayorista, y el contacto se completa con una
+ * consulta por mayorista distinto (suelen ser pocos, no uno por reserva).
+ */
+const ClientsSection = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all');
+  const [mayoristas, setMayoristas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
-  // Datos de ejemplo según el tipo de usuario
-  const getClientsData = () => {
-    const baseClients = [
-      {
-        id: 1,
-        name: 'Carlos Rodríguez',
-        email: 'carlos@email.com',
-        phone: '+57 300 123 4567',
-        location: 'Bogotá, Colombia',
-        joinDate: '2023-06-15',
-        totalSpent: 2500000,
-        visits: 8,
-        rating: 4.8,
-        type: 'vip',
-        lastVisit: '2024-01-10',
-        preferences: ['Suite', 'Vista al mar', 'Spa'],
-        notes: 'Cliente frecuente, prefiere habitaciones con vista'
-      },
-      {
-        id: 2,
-        name: 'María González',
-        email: 'maria@email.com',
-        phone: '+57 301 987 6543',
-        location: 'Medellín, Colombia',
-        joinDate: '2023-09-22',
-        totalSpent: 850000,
-        visits: 3,
-        rating: 4.5,
-        type: 'regular',
-        lastVisit: '2024-01-05',
-        preferences: ['Desayuno incluido', 'WiFi'],
-        notes: 'Viaja por negocios, necesita facturación empresarial'
-      },
-      {
-        id: 3,
-        name: 'Juan Pérez',
-        email: 'juan@email.com',
-        phone: '+57 302 456 7890',
-        location: 'Cali, Colombia',
-        joinDate: '2024-01-08',
-        totalSpent: 320000,
-        visits: 1,
-        rating: 4.2,
-        type: 'new',
-        lastVisit: '2024-01-08',
-        preferences: ['Habitación familiar'],
-        notes: 'Primera visita, familia con niños pequeños'
-      },
-      {
-        id: 4,
-        name: 'Ana Martínez',
-        email: 'ana@email.com',
-        phone: '+57 300 111 2222',
-        location: 'Cartagena, Colombia',
-        joinDate: '2022-12-10',
-        totalSpent: 4200000,
-        visits: 15,
-        rating: 4.9,
-        type: 'vip',
-        lastVisit: '2024-01-12',
-        preferences: ['Cena romántica', 'Mesa privada'],
-        notes: 'Cliente VIP, celebra aniversarios regularmente'
-      },
-      {
-        id: 5,
-        name: 'Roberto Silva',
-        email: 'roberto@email.com',
-        phone: '+57 301 333 4444',
-        location: 'Barranquilla, Colombia',
-        joinDate: '2023-11-05',
-        totalSpent: 1200000,
-        visits: 6,
-        rating: 4.3,
-        type: 'regular',
-        lastVisit: '2024-01-07',
-        preferences: ['Tours de aventura', 'Actividades extremas'],
-        notes: 'Le gustan las actividades de aventura y deportes extremos'
+  // Obtener id del proveedor del token
+  useEffect(() => {
+    const token = Cookies.get('access_token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setCurrentUserId(decoded?.id || null);
+      } catch (e) {
+        console.error('Error al decodificar token:', e);
       }
-    ];
-
-    // Adaptar datos según el tipo de usuario
-    return baseClients.map(client => {
-      if (userType === 'restaurante') {
-        return {
-          ...client,
-          preferences: ['Mesa junto a ventana', 'Platos vegetarianos', 'Vino tinto'],
-          visits: Math.floor(client.visits * 2), // Restaurantes tienen más visitas
-          notes: client.notes.replace(/habitación|suite/gi, 'mesa').replace(/hotel/gi, 'restaurante')
-        };
-      } else if (userType === 'tour') {
-        return {
-          ...client,
-          preferences: ['Tours culturales', 'Fotografía', 'Grupos pequeños'],
-          notes: client.notes.replace(/habitación|suite/gi, 'tour').replace(/hotel/gi, 'experiencia')
-        };
-      }
-      return client;
-    });
-  };
-
-  const clients = getClientsData();
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === 'all' || client.type === filterType;
-    return matchesSearch && matchesFilter;
-  });
-
-  const getClientTypeBadge = (type) => {
-    switch (type) {
-      case 'vip':
-        return (
-          <span className="flex items-center space-x-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-            <Award className="h-3 w-3" />
-            <span>VIP</span>
-          </span>
-        );
-      case 'regular':
-        return (
-          <span className="flex items-center space-x-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-            <Heart className="h-3 w-3" />
-            <span>Regular</span>
-          </span>
-        );
-      case 'new':
-        return (
-          <span className="flex items-center space-x-1 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-            <TrendingUp className="h-3 w-3" />
-            <span>Nuevo</span>
-          </span>
-        );
-      default:
-        return null;
     }
+  }, []);
+
+  useEffect(() => {
+    const cargar = async () => {
+      if (!currentUserId) return;
+      setLoading(true);
+      setError(null);
+
+      try {
+        const respuesta = await reservationsService.listarPorProveedor(currentUserId);
+        const reservas = Array.isArray(respuesta)
+          ? respuesta
+          : respuesta?.reservas || respuesta?.data || [];
+
+        const agrupados = agruparPorMayorista(reservas);
+        setMayoristas(agrupados);
+
+        // El contacto llega en una segunda tanda: la lista ya se puede ver
+        // mientras tanto, y si ms_mayoristas falla la ficha sigue en pie.
+        const ids = agrupados.map((m) => m.id).filter(Boolean);
+        if (ids.length > 0) {
+          const contactos = await mayoristasService.consultarVarios(ids);
+          setMayoristas((previos) =>
+            previos.map((m) => ({ ...m, contacto: contactos[m.id] || null })),
+          );
+        }
+      } catch (err) {
+        console.error('Error al cargar los mayoristas:', err);
+        setError('No se pudieron cargar los mayoristas. Intenta nuevamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    cargar();
+  }, [currentUserId]);
+
+  // Noches entre dos fechas "YYYY-MM-DD", comparadas como fechas locales.
+  const contarNoches = (inicio, fin) => {
+    if (!inicio || !fin) return 1;
+    const aFecha = (valor) => {
+      const p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor);
+      return p ? new Date(Number(p[1]), Number(p[2]) - 1, Number(p[3])) : new Date(valor);
+    };
+    const noches = Math.round((aFecha(fin) - aFecha(inicio)) / 86400000);
+    return noches > 0 ? noches : 1;
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
+  // Total de una reserva con la misma regla que usa el resto del sistema:
+  // el alojamiento se cobra por noche y todo lo demás por persona.
+  const totalDeReserva = (r) => {
+    const precio = Number(r.precio) || 0;
+    const cantidad = r.cantidad || r.personas || 1;
+    const porRango = ['alojamiento', 'hoteles', 'hotel'].includes(
+      String(r.tipo_servicio || '').toLowerCase(),
+    );
+    const multiplicador = porRango ? contarNoches(r.fecha_inicio, r.fecha_fin) : cantidad;
+    return precio * multiplicador;
+  };
+
+  const agruparPorMayorista = (reservas) => {
+    const porId = new Map();
+
+    reservas.forEach((r) => {
+      const id = r.id_mayorista;
+      if (!id) return;
+
+      const acumulado = porId.get(id) || {
+        id,
+        nombre: r.nombre_mayorista || 'Mayorista',
+        reservas: 0,
+        aprobadas: 0,
+        pendientes: 0,
+        totalAprobado: 0,
+        ultimaReserva: null,
+        servicios: new Set(),
+        contacto: null,
+      };
+
+      const estado = String(r.estado || '').toLowerCase();
+      acumulado.reservas += 1;
+      if (estado === 'aprobada') {
+        acumulado.aprobadas += 1;
+        acumulado.totalAprobado += totalDeReserva(r);
+      }
+      if (estado === 'pendiente') acumulado.pendientes += 1;
+      if (r.nombre_servicio) acumulado.servicios.add(r.nombre_servicio);
+
+      const fecha = r.fecha_creacion || r.fecha_inicio;
+      if (fecha && (!acumulado.ultimaReserva || fecha > acumulado.ultimaReserva)) {
+        acumulado.ultimaReserva = fecha;
+      }
+
+      porId.set(id, acumulado);
+    });
+
+    return [...porId.values()]
+      .map((m) => ({ ...m, servicios: [...m.servicios] }))
+      .sort((a, b) => b.reservas - a.reservas);
+  };
+
+  const formatearFecha = (valor) => {
+    if (!valor) return '—';
+    const soloFecha = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor);
+    const fecha = soloFecha
+      ? new Date(Number(soloFecha[1]), Number(soloFecha[2]) - 1, Number(soloFecha[3]))
+      : new Date(valor);
+    if (isNaN(fecha.getTime())) return '—';
+    return fecha.toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
-  const getVisitLabel = () => {
-    switch (userType) {
-      case 'hotel':
-        return 'Estadías';
-      case 'restaurante':
-        return 'Visitas';
-      case 'tour':
-        return 'Tours';
-      default:
-        return 'Visitas';
-    }
-  };
+  const formatearMoneda = (valor) =>
+    new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+    }).format(valor || 0);
+
+  const iniciales = (nombre) =>
+    nombre
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0])
+      .join('')
+      .toUpperCase();
+
+  const filtrados = mayoristas.filter((m) => {
+    const q = searchTerm.toLowerCase();
+    return (
+      m.nombre.toLowerCase().includes(q) ||
+      (m.contacto?.email || '').toLowerCase().includes(q) ||
+      (m.contacto?.ciudad || '').toLowerCase().includes(q)
+    );
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <Loader className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-gray-600">Cargando mayoristas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Error al cargar los mayoristas</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header con acciones */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Gestión de Clientes</h2>
+          <h2 className="text-xl font-bold text-gray-900">Mayoristas</h2>
           <p className="text-sm text-gray-600">
-            Administra tu base de datos de clientes
+            Agencias y mayoristas que han reservado tus servicios
           </p>
         </div>
-        <button className="btn-primary flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
-          <span>Nuevo Cliente</span>
-        </button>
       </div>
 
-      {/* Filtros y búsqueda */}
+      {/* Búsqueda */}
       <div className="card">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Buscar por nombre, email o ubicación..."
-                className="input-field pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Filter className="h-4 w-4 text-gray-400" />
-            <select
-              className="input-field w-auto"
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-            >
-              <option value="all">Todos los tipos</option>
-              <option value="vip">VIP</option>
-              <option value="regular">Regulares</option>
-              <option value="new">Nuevos</option>
-            </select>
-          </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, email o ciudad..."
+            className="input-field pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
 
-      {/* Estadísticas rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Resumen */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Clientes</p>
-              <p className="text-2xl font-bold text-gray-900">{clients.length}</p>
+              <p className="text-sm font-medium text-gray-600">Mayoristas</p>
+              <p className="text-2xl font-bold text-gray-900">{mayoristas.length}</p>
             </div>
             <Users className="h-8 w-8 text-primary" />
           </div>
         </div>
-        
+
         <div className="card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Clientes VIP</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {clients.filter(c => c.type === 'vip').length}
-              </p>
-            </div>
-            <Award className="h-8 w-8 text-yellow-600" />
-          </div>
-        </div>
-        
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Nuevos (Este mes)</p>
+              <p className="text-sm font-medium text-gray-600">Reservas aprobadas</p>
               <p className="text-2xl font-bold text-green-600">
-                {clients.filter(c => c.type === 'new').length}
+                {mayoristas.reduce((suma, m) => suma + m.aprobadas, 0)}
               </p>
             </div>
-            <TrendingUp className="h-8 w-8 text-green-600" />
+            <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
         </div>
-        
+
         <div className="card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Rating Promedio</p>
+              <p className="text-sm font-medium text-gray-600">Facturado (aprobadas)</p>
               <p className="text-2xl font-bold text-primary">
-                {(clients.reduce((sum, c) => sum + c.rating, 0) / clients.length).toFixed(1)}
+                {formatearMoneda(mayoristas.reduce((suma, m) => suma + m.totalAprobado, 0))}
               </p>
             </div>
-            <Star className="h-8 w-8 text-primary" />
+            <DollarSign className="h-8 w-8 text-primary" />
           </div>
         </div>
       </div>
 
-      {/* Lista de clientes */}
+      {/* Lista */}
       <div className="space-y-4">
-        {filteredClients.map((client) => (
-          <div key={client.id} className="card hover:shadow-lg transition-shadow duration-200">
+        {filtrados.map((m) => (
+          <div key={m.id} className="card hover:shadow-lg transition-shadow duration-200">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              {/* Información principal */}
               <div className="flex-1">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center">
-                      <span className="text-primary font-bold">
-                        {client.name.split(' ').map(n => n[0]).join('')}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900">{client.name}</h3>
-                      <p className="text-sm text-gray-600">{client.email}</p>
-                    </div>
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center">
+                    <span className="text-primary font-bold">{iniciales(m.nombre)}</span>
                   </div>
-                  {getClientTypeBadge(client.type)}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
-                  <div className="flex items-center space-x-2">
-                    <Phone className="h-4 w-4" />
-                    <span>{client.phone}</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>{client.location}</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>Desde: {formatDate(client.joinDate)}</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Star className="h-4 w-4" />
-                    <span>{client.rating}/5.0</span>
-                  </div>
-                </div>
-
-                {/* Estadísticas del cliente */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-xs text-gray-600">Total Gastado</p>
-                    <p className="text-lg font-bold text-gray-900">
-                      ${client.totalSpent.toLocaleString()}
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-xs text-gray-600">{getVisitLabel()}</p>
-                    <p className="text-lg font-bold text-gray-900">{client.visits}</p>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-xs text-gray-600">Última Visita</p>
-                    <p className="text-lg font-bold text-gray-900">
-                      {formatDate(client.lastVisit)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Preferencias */}
-                <div className="mb-3">
-                  <p className="text-xs text-gray-600 mb-2">Preferencias:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {client.preferences.slice(0, 3).map((preference, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-primary bg-opacity-10 text-primary text-xs rounded-full"
-                      >
-                        {preference}
-                      </span>
-                    ))}
-                    {client.preferences.length > 3 && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                        +{client.preferences.length - 3} más
-                      </span>
+                  <div>
+                    <h3 className="font-bold text-gray-900">{m.nombre}</h3>
+                    {m.contacto?.email && (
+                      <p className="text-sm text-gray-600">{m.contacto.email}</p>
                     )}
                   </div>
                 </div>
 
-                {/* Notas */}
-                {client.notes && (
-                  <div className="p-2 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-600">
-                      <strong>Notas:</strong> {client.notes}
-                    </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700">
+                  {m.contacto?.telefono && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-gray-400" />
+                      <span>{m.contacto.telefono}</span>
+                    </div>
+                  )}
+                  {m.contacto?.ciudad && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      <span>
+                        {m.contacto.ciudad}
+                        {m.contacto.departamento ? `, ${m.contacto.departamento}` : ''}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <span>Última reserva: {formatearFecha(m.ultimaReserva)}</span>
+                  </div>
+                </div>
+
+                {m.servicios.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {m.servicios.map((servicio) => (
+                      <span
+                        key={servicio}
+                        className="px-2 py-0.5 text-xs rounded-full bg-blue-50 text-blue-600 border border-blue-100"
+                      >
+                        {servicio}
+                      </span>
+                    ))}
                   </div>
                 )}
               </div>
 
-              {/* Acciones */}
-              <div className="flex flex-col items-end space-y-3">
-                <div className="flex items-center space-x-2">
-                  <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors duration-200">
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  <button className="p-2 text-gray-400 hover:text-green-600 transition-colors duration-200">
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  <button className="p-2 text-gray-400 hover:text-primary transition-colors duration-200">
-                    <Mail className="h-4 w-4" />
-                  </button>
+              {/* Cifras del mayorista */}
+              <div className="grid grid-cols-3 gap-4 lg:w-80 shrink-0 text-center">
+                <div>
+                  <p className="text-xs text-gray-500">Reservas</p>
+                  <p className="text-lg font-bold text-gray-900">{m.reservas}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Pendientes</p>
+                  <p className="text-lg font-bold text-yellow-600">{m.pendientes}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Facturado</p>
+                  <p className="text-lg font-bold text-primary">
+                    {formatearMoneda(m.totalAprobado)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -390,16 +340,18 @@ const ClientsSection = ({ userType }) => {
         ))}
       </div>
 
-      {filteredClients.length === 0 && (
+      {filtrados.length === 0 && (
         <div className="card text-center py-12">
           <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
             <Users className="h-8 w-8 text-gray-400" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No se encontraron clientes
+            {searchTerm ? 'No se encontraron mayoristas' : 'Todavía no hay mayoristas'}
           </h3>
           <p className="text-gray-600">
-            {searchTerm ? 'Intenta con otros términos de búsqueda' : 'Los clientes aparecerán aquí'}
+            {searchTerm
+              ? 'Intenta ajustar la búsqueda'
+              : 'Cuando un mayorista reserve alguno de tus servicios, aparecerá acá'}
           </p>
         </div>
       )}

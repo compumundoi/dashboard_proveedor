@@ -6,8 +6,6 @@ import DashboardNavigation from './DashboardNavigation';
 import RestaurantServicesSection from './sections/RestaurantServicesSection';
 import ReservationsSection from './sections/ReservationsSection';
 import ClientsSection from './sections/ClientsSection';
-import FinancesSection from './sections/FinancesSection';
-import StatisticsSection from './sections/StatisticsSection';
 
 const RestaurantDashboard = ({ user, onLogout }) => {
   const [restaurantData, setRestaurantData] = useState(null);
@@ -71,10 +69,6 @@ const RestaurantDashboard = ({ user, onLogout }) => {
         return <ReservationsSection userType="restaurante" />;
       case 'clientes':
         return <ClientsSection userType="restaurante" />;
-      case 'finanzas':
-        return <FinancesSection userType="restaurante" />;
-      case 'estadisticas':
-        return <StatisticsSection userType="restaurante" />;
       default:
         return <RestaurantServicesSection />;
     }

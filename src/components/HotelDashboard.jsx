@@ -6,8 +6,6 @@ import DashboardNavigation from './DashboardNavigation';
 import HotelServicesSection from './sections/HotelServicesSection';
 import ReservationsSection from './sections/ReservationsSection';
 import ClientsSection from './sections/ClientsSection';
-import FinancesSection from './sections/FinancesSection';
-import StatisticsSection from './sections/StatisticsSection';
 
 const HotelDashboard = ({ user, onLogout }) => {
   const [activeSection, setActiveSection] = useState('servicios');
@@ -71,10 +69,6 @@ const HotelDashboard = ({ user, onLogout }) => {
         return <ReservationsSection userType="hotel" />;
       case 'clientes':
         return <ClientsSection userType="hotel" />;
-      case 'finanzas':
-        return <FinancesSection userType="hotel" />;
-      case 'estadisticas':
-        return <StatisticsSection userType="hotel" />;
       default:
         return <HotelServicesSection />;
     }

@@ -11,9 +11,11 @@ import {
   AlertCircle,
   Filter,
   Search,
-  Loader
+  Loader,
+  Eye
 } from 'lucide-react';
 import reservationsService from '../../services/reservationsService';
+import ReservationDetailModal from '../modals/ReservationDetailModal';
 import jwtDecode from 'jwt-decode';
 import Cookies from 'js-cookie';
 
@@ -25,6 +27,7 @@ const ReservationsSection = ({ userType }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [reservaSeleccionada, setReservaSeleccionada] = useState(null);
 
   // Obtener id del proveedor del token
   useEffect(() => {
@@ -208,6 +211,8 @@ const ReservationsSection = ({ userType }) => {
         return 'Fecha';
       case 'tour':
         return 'Fecha del Tour';
+      case 'transporte':
+        return 'Fecha del Viaje';
       default:
         return 'Fecha';
     }
@@ -367,7 +372,17 @@ const ReservationsSection = ({ userType }) => {
                     Solicita: {r.guestName}
                   </p>
                 </div>
-                <div className="shrink-0">{getStatusBadge(r.status)}</div>
+                <div className="shrink-0 flex items-center gap-2">
+                  {getStatusBadge(r.status)}
+                  <button
+                    onClick={() => setReservaSeleccionada(r)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-primary border border-primary border-opacity-30 rounded-lg hover:bg-primary hover:bg-opacity-5 transition-colors duration-200"
+                    title="Ver detalle de la reserva"
+                  >
+                    <Eye className="h-4 w-4" />
+                    <span>Ver detalle</span>
+                  </button>
+                </div>
               </div>
 
               {/* Contenido de la card */}
@@ -437,6 +452,12 @@ const ReservationsSection = ({ userType }) => {
           </div>
         ))}
       </div>
+
+      <ReservationDetailModal
+        isOpen={reservaSeleccionada !== null}
+        onClose={() => setReservaSeleccionada(null)}
+        reservation={reservaSeleccionada}
+      />
 
       {filteredReservations.length === 0 && (
         <div className="card text-center py-12">

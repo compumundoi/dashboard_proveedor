@@ -6,8 +6,6 @@ import DashboardNavigation from './DashboardNavigation';
 import ExperienceServicesSection from './sections/ExperienceServicesSection';
 import ReservationsSection from './sections/ReservationsSection';
 import ClientsSection from './sections/ClientsSection';
-import FinancesSection from './sections/FinancesSection';
-import StatisticsSection from './sections/StatisticsSection';
 
 const ExperienceDashboard = ({ user, onLogout }) => {
   const [experienceData, setExperienceData] = useState(null);
@@ -71,10 +69,6 @@ const ExperienceDashboard = ({ user, onLogout }) => {
         return <ReservationsSection userType="tour" />;
       case 'clientes':
         return <ClientsSection userType="tour" />;
-      case 'finanzas':
-        return <FinancesSection userType="tour" />;
-      case 'estadisticas':
-        return <StatisticsSection userType="tour" />;
       default:
         return <ExperienceServicesSection />;
     }

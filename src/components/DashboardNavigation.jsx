@@ -3,11 +3,10 @@ import {
   Settings, 
   Calendar, 
   Users, 
-  DollarSign, 
-  BarChart3,
   Building,
   UtensilsCrossed,
-  Star
+  Star,
+  Bus
 } from 'lucide-react';
 
 const DashboardNavigation = ({ activeSection, onSectionChange, userType }) => {
@@ -19,10 +18,6 @@ const DashboardNavigation = ({ activeSection, onSectionChange, userType }) => {
         return <Calendar className="h-5 w-5" />;
       case 'clientes':
         return <Users className="h-5 w-5" />;
-      case 'finanzas':
-        return <DollarSign className="h-5 w-5" />;
-      case 'estadisticas':
-        return <BarChart3 className="h-5 w-5" />;
       default:
         return <Settings className="h-5 w-5" />;
     }
@@ -36,6 +31,8 @@ const DashboardNavigation = ({ activeSection, onSectionChange, userType }) => {
         return <UtensilsCrossed className="h-6 w-6 text-white" />;
       case 'tour':
         return <Star className="h-6 w-6 text-white" />;
+      case 'transporte':
+        return <Bus className="h-6 w-6 text-white" />;
       default:
         return <Settings className="h-6 w-6 text-white" />;
     }
@@ -49,6 +46,8 @@ const DashboardNavigation = ({ activeSection, onSectionChange, userType }) => {
         return 'bg-complementary-2';
       case 'tour':
         return 'bg-complementary-1';
+      case 'transporte':
+        return 'bg-complementary-2';
       default:
         return 'bg-primary';
     }
@@ -62,6 +61,8 @@ const DashboardNavigation = ({ activeSection, onSectionChange, userType }) => {
         return 'Restaurante';
       case 'tour':
         return 'Experiencias';
+      case 'transporte':
+        return 'Transporte';
       default:
         return 'Dashboard';
     }
@@ -70,9 +71,7 @@ const DashboardNavigation = ({ activeSection, onSectionChange, userType }) => {
   const sections = [
     { id: 'servicios', name: 'Servicios' },
     { id: 'reservas', name: 'Reservas' },
-    { id: 'clientes', name: 'Clientes' },
-    { id: 'finanzas', name: 'Finanzas' },
-    { id: 'estadisticas', name: 'Estadísticas' }
+    { id: 'clientes', name: 'Mayoristas' }
   ];
 
   return (
