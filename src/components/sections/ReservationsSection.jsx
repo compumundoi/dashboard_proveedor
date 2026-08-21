@@ -102,6 +102,8 @@ const ReservationsSection = ({ userType }) => {
         specialRequests: r.observaciones || '',
         // Motivo con el que el administrador rechazo la reserva
         rejectionReason: r.motivo_rechazo || '',
+        // Estado del cobro, para saber si la reserva ya esta pagada
+        paymentState: r.estado_pago || 'no_aplica',
         // otros
         time: r.hora || null,
         rawStart: r.fecha_inicio || null,
@@ -398,6 +400,28 @@ const ReservationsSection = ({ userType }) => {
                 <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-100">
                   <p className="text-sm text-gray-600">
                     <strong className="text-gray-700">Observaciones:</strong> {r.specialRequests}
+                  </p>
+                </div>
+              )}
+
+              {r.status === 'aprobada' && r.paymentState !== 'no_aplica' && (
+                <div
+                  className={`mt-1 p-2.5 rounded-lg border ${
+                    r.paymentState === 'aprobado'
+                      ? 'bg-green-50 border-green-100'
+                      : 'bg-blue-50 border-blue-100'
+                  }`}
+                >
+                  <p
+                    className={`text-sm ${
+                      r.paymentState === 'aprobado'
+                        ? 'text-green-700'
+                        : 'text-blue-800'
+                    }`}
+                  >
+                    {r.paymentState === 'aprobado'
+                      ? 'Pago confirmado por el mayorista'
+                      : 'Pendiente de pago por el mayorista'}
                   </p>
                 </div>
               )}
